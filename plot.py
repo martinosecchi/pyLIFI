@@ -23,7 +23,7 @@ def help():
 	print ''
 
 def main(argv):
-	opts, args = getopt.getopt(argv, 'f:i:m:p:s:y:h', 'file=, interval=, mode=, processed=, split=, yrange=, help')
+	opts, args = getopt.getopt(argv, 'f:i:m:p:s:y:h', ['file=', 'interval=', 'mode=', 'processed=', 'split=', 'yrange=', 'help'])
 	
 	if len(args)!=1:
 		help()
@@ -88,7 +88,7 @@ def plots(folder, samplefile, processedfile, interval, yrange, splitint):
 		cmds = []
 		cmds.append("set term png")
 		cmds.append("set out \"" + os.path.join(folder,samplefile) + str(i) + ".png\" " )
-		cmds.append("set xlabel \"seconds\" " )
+		cmds.append("set xlabel \"time\" " )
 		cmds.append("set ylabel \"brightness\"")
 		if interval:
 			cmds.append("set xrange [%f:%f] " % (start, temp))
@@ -120,7 +120,7 @@ def plotz(folder, samplefile, interval, yrange, splitint):
 		cmds = []
 		cmds.append("set term png")
 		cmds.append("set out \"" + os.path.join(folder,samplefile) + str(i) + ".png\" " )
-		cmds.append("set xlabel \"seconds\" " )
+		cmds.append("set xlabel \"time\" " )
 		cmds.append("set ylabel \"brightness\"")
 		if interval:
 			cmds.append("set xrange [%f:%f] " % (start, temp))
@@ -143,7 +143,7 @@ def plotn(folder, samplefile, interval, yrange):
 	cmds = []
 	cmds.append("set term png")
 	cmds.append("set out \"" + os.path.join(folder,samplefile) + ".png\" " )
-	cmds.append("set xlabel \"seconds\" " )
+	cmds.append("set xlabel \"time\" " )
 	cmds.append("set ylabel \"brightness\"")
 	if interval:
 		cmds.append("set xrange [" + interval + "] ")
@@ -162,14 +162,12 @@ def plotp(folder, processedfile, label, interval, yrange):
 	cmds = []
 	cmds.append("set term png")
 	cmds.append("set out \"" + os.path.join(folder,processedfile) + str(label) + ".png\" " )
-	cmds.append("set xlabel \"seconds\" " )
+	cmds.append("set xlabel \"time\" " )
 	cmds.append("set ylabel \"brightness\"")
 	if interval:
 		cmds.append("set xrange [" + interval + "] ")
 	if yrange:
 		cmds.append("set yrange ["+ yrange +"]")
-	# cmds.append("set xrange [2.05:2.1] ")
-	# cmds.append("set yrange [15:70]")
 	cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \"sample.txt\" u 1:2 w linespoints title \"original\" pt 12")
 	cmds.append("quit")
 	f = p.stdin
