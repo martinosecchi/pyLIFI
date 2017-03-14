@@ -135,8 +135,6 @@ def manchester(string):
 			s +=  "01" if (c & (1 << i)) else "10"
 	return s;
 
-
-
 def compare(res, intended='hello world'):
 
 	intended = manchester(intended)

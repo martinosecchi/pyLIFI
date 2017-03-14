@@ -5,6 +5,9 @@ from sklearn.neural_network import MLPClassifier
 import re
 import numpy
 import os
+from alignment.sequence import Sequence
+from alignment.vocabulary import Vocabulary
+from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 
 categories = ["101", "100", "011", "110", "001", "11", "00", "10", "01"]
 maxsize = 12
@@ -127,25 +130,42 @@ def cut_zeroes(res):
 		i+=1
 	return res[i:]
 
-def compare(res):
-	# for comparing known transmission of "hello world"
-	# intendedbin = '0110100001100101011011000110110001101111001000000111011101101111011100100110110001100100'
-	# intended = ''.join(['01' if x == '1' else '10' for x in intendedbin])
-	intended = '10010110011010101001011010011001100101100101101010010110010110101001011001010101101001101010101010010101100101011001011001010101100101011010011010010110010110101001011010011010'
+def manchester(string):
+	s = ""
+	for c in bytearray(string):
+		for i in range(7,-1,-1):
+			s +=  "01" if (c & (1 << i)) else "10"
+	return s;
+
+def compare(res, intended='hello world'):
+
+	intended = manchester(intended)
+	print 
 	print 'intended'
 	print intended
-	print '==='
+	print 
 	print 'result'
 	print res
-	print '==='
-	res = cut_zeroes(res)
-	s = min(len(intended), len(res))
-	for i in xrange(s):
-		if res[i] == intended[i]:
-			print res[i],
-		else:
-			print '-',
-	print '_' * abs(len(intended) - len(res))
+	print 
+	
+	a = Sequence(list(res))
+	b = Sequence(list(intended))
+	v = Vocabulary()
+	aEncoded = v.encodeSequence(a)
+	bEncoded = v.encodeSequence(b)
+
+	# Create a scoring and align the sequences using global aligner.
+	scoring = SimpleScoring(2, -1)
+	aligner = GlobalSequenceAligner(scoring, -2)
+	score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
+
+	# Iterate over optimal alignments and print them.
+	for encoded in encodeds:
+	    alignment = v.decodeSequenceAlignment(encoded)
+	    print alignment
+	    print 'Alignment score:', alignment.score
+	    print 'Percent identity:', alignment.percentIdentity()
+	    print
 
 def load_train_data():
 	global categories
