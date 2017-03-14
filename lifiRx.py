@@ -46,6 +46,7 @@ class lifiRx(threading.Thread):
 		if self.do_write:
 			self.f = open("sample.txt", "w+")
 			start = now()
+		self.arduino.readline() # skip first, usually it's partial
 		while not self.do_exit.isSet():
 			l = None
 			try:

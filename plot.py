@@ -61,7 +61,7 @@ def main(argv):
 	if mode == 'normal' or mode == 'n':
 		plotn(folder,samplefile,interval,yrange)
 	elif mode == 'processed' or mode == 'p':
-		plotp(folder, processedfile, '', interval, yrange)
+		plotp(folder, samplefile, processedfile, '', interval, yrange)
 	elif mode == 'split' or mode == 's':
 		if not interval or not splitint:
 			help()
@@ -94,7 +94,7 @@ def plots(folder, samplefile, processedfile, interval, yrange, splitint):
 			cmds.append("set xrange [%f:%f] " % (start, temp))
 		if yrange:
 			cmds.append("set yrange ["+ yrange +"]")
-		cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \"sample.txt\" u 1:2 w linespoints title \"original\" pt 12")
+		cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \"" + samplefile + "\" u 1:2 w linespoints title \"original\" pt 12")
 		cmds.append("quit")
 		f = p.stdin
 		print >> f, '\n'.join(cmds)
@@ -156,7 +156,7 @@ def plotn(folder, samplefile, interval, yrange):
 	f.close()
 	p.wait()
 
-def plotp(folder, processedfile, label, interval, yrange):
+def plotp(folder, samplefile, processedfile, label, interval, yrange):
 	# plot for processed, comparison
 	p = subprocess.Popen(['gnuplot', '-'], stdin=subprocess.PIPE)
 	cmds = []
@@ -168,7 +168,7 @@ def plotp(folder, processedfile, label, interval, yrange):
 		cmds.append("set xrange [" + interval + "] ")
 	if yrange:
 		cmds.append("set yrange ["+ yrange +"]")
-	cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \"sample.txt\" u 1:2 w linespoints title \"original\" pt 12")
+	cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \""+samplefile+"\" u 1:2 w linespoints title \"original\" pt 12")
 	cmds.append("quit")
 	f = p.stdin
 	print >> f, '\n'.join(cmds)

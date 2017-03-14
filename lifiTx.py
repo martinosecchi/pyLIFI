@@ -4,8 +4,8 @@ import time
 import serial
 import Queue
 
-STX = bytearray([2])
-ETX = bytearray([3])
+STX = "XSTX"#bytearray([2])
+ETX = "XETX"#bytearray([3])
 tx_addr = '/dev/cu.usbserial-DA0147XE' #RedBoard
 
 
