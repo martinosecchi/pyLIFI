@@ -46,17 +46,32 @@ class lifiRx(threading.Thread):
 		if self.do_write:
 			self.f = open("sample.txt", "w+")
 			start = now()
-		self.arduino.readline() # skip first, usually it's partial
+		#skip until first, the set prev as the value
+		prev = None
+		while not prev:
+			try:
+				prev = self.arduino.readline()
+			except:
+				pass
+		prev = float(prev.split(" ")[1])
+
 		while not self.do_exit.isSet():
 			l = None
+			value = None
 			try:
 				l = self.arduino.readline()
+				value = float(l.split(" ")[1])
+				time = l.split(" ")[0]
 			except:
 				pass
 			if l and self.do_write:
 				# print l,
 				# self.f.write(l)
-				self.f.write(l)
+				value = (value+prev)/2
+				self.f.write( time + " " + str(value) + "\n" )
+				# self.f.write( time + " " + str(value - prev) + "\n") # differantial signal
+			if value:
+				prev = value
 
 def main():
 	global rx_addr

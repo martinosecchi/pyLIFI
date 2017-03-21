@@ -7,12 +7,16 @@ from alignment.vocabulary import Vocabulary
 from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 
 def help():
-	print 'process the signal (manual reading)'
+	print 'process the signal, help page'
+	print 'values in parenthesis () are the default'
 	print 'options:'
 	print ' -i: or --interval=  interval of interesting part (time value)'
 	print ' -f: or --file= 		file to read (sample.txt)'
 	print ' -w: or --write= 	output file (processed.txt)'
-	print ' --epsilon= 			variation considered noise'
+	print ' -m: or --mode=		mode, filter f, differential d or process (p)'
+	print ' -e or --epsilon= 	variation considered noise'
+	print ' --ud= set up down as up:down'
+	print 'in filter mode, epsilon will be the number of values used to average out each one'
 
 def main(argv):
 	# read arguments and set variables
@@ -21,8 +25,10 @@ def main(argv):
 	start = 0
 	end = ''
 	epsilon = 6
-
-	opts, args = getopt.getopt(argv, 'hi:f:w:', ['interval=', 'file=', 'write=', 'epsilon='])
+	mode = 'p'
+	up = None
+	down = None
+	opts, args = getopt.getopt(argv, 'hi:f:w:m:e:', ['ud=', 'interval=', 'file=', 'write=', 'epsilon=', 'mode='])
 
 	for opt, arg in opts:
 		if opt == '-h':
@@ -35,11 +41,129 @@ def main(argv):
 			samplefile = arg
 		elif opt == '-w' or opt == '--write':
 			processedfile = arg
-		elif opt == '--epsilon':
+		elif opt == '-e' or opt == '--epsilon':
 			epsilon = int(arg)
+		elif opt == '-m' or opt == '--mode':
+			mode = arg
+		elif opt == '--ud':
+			up = arg.split(":")[0]
+			down = arg.split(":")[1]
 
-	digital(samplefile, processedfile, start, end, epsilon)
-	# process(samplefile, processedfile, start, end, epsilon)
+	if mode == 'p':
+		digital(samplefile, processedfile, start, end, epsilon, up, down)
+	elif mode == 'f':
+		filterAVG(samplefile, processedfile, start, end, epsilon)
+	elif mode == 'd':
+		differential(samplefile, processedfile, start, end)
+
+def digital(samplefile, processedfile, start, end, epsilon, up, down):
+	# naive version, look only at trend, don't count the things before
+	
+	if processedfile is None:
+		# processedfile = "digital" + str(epsilon) + ".txt"
+		processedfile = "processed.txt"
+	f = open(samplefile, 'r')
+	lines = f.readlines()
+	f.close()
+	fw = open(processedfile, 'w+')
+	fw.write("# digital " + str(epsilon) + " s: " + str(start) + " e: " + str(end) + "\n")
+	if up is None and down is None:
+		# up = '110'
+		# down = '80'
+		# up = '70'
+		# down = '30'
+		up = '50'
+		down = '25' 
+	direction = down
+	prev = float(lines[1].split(" ")[1])
+
+	if not end:
+		end = float(lines[-1].split(" ")[0])
+
+	for l in lines[2:]:
+		value = float(l.split(" ")[1])
+		time = float(l.split(" ")[0])
+
+		if time < float(start):
+			sys.stdout.write('skip smaller\r')
+			sys.stdout.flush()
+			prev = value
+			continue
+		elif float(time) >= float(end):
+			# print 'end reached', str(time), str(end), str(time >= end)
+			break
+
+		if abs(value - prev) <= epsilon: #difference is less than noise, stationary
+			pass	
+		elif value <= prev:
+			direction = down
+		else:
+			direction = up
+		fw.write(str(time) + " " + direction + "\n")
+		prev = value
+	fw.close()
+
+def differential(samplefile, processedfile, start, end):
+	if processedfile is None:
+		processedfile = "differential.txt"
+	f = open(samplefile, 'r')
+	lines = f.readlines()
+	f.close()
+	fw = open(processedfile, 'w+')
+	fw.write("# differential  s: " + str(start) + " e: " + str(end) + "\n")
+
+	prev = float(lines[1].split(" ")[1])
+
+	if not end:
+		end = float(lines[-1].split(" ")[0])
+
+	for l in lines[2:]:
+		value = float(l.split(" ")[1])
+		time = float(l.split(" ")[0])
+
+		if time < float(start):
+			prev = value
+			continue
+		elif float(time) >= float(end):
+			break
+
+		fw.write(str(time) + " " + str((value - prev)) + "\n")
+		prev = value
+	fw.close()
+
+
+def filterAVG(samplefile, processedfile, start, end, epsilon):
+	print 'WARNING, this function is now included in lifiRX, thus processing here will be added on that'
+	print 'WARNING, hardcoding epsilon to 2'
+	epsilon = 2
+	
+	if processedfile is None:
+		processedfile = "filtered" + str(epsilon) + ".txt"
+	f = open(samplefile, 'r')
+	lines = f.readlines()
+	f.close()
+	fw = open(processedfile, 'w+')
+	fw.write("# filtered " + str(epsilon) + " s: " + str(start) + " e: " + str(end) + "\n")
+
+	
+	prev = float(lines[1].split(" ")[1])
+
+	if not end:
+		end = float(lines[-1].split(" ")[0])
+
+	for l in lines[2:]:
+		value = float(l.split(" ")[1])
+		time = float(l.split(" ")[0])
+
+		if time < float(start):
+			prev = value
+			continue
+		elif float(time) >= float(end):
+			break
+
+		fw.write(str(time) + " " + str((prev+value)/epsilon) + "\n")
+		prev = value
+	fw.close()
 
 def cut_zeroes(res):
 	i = 0
@@ -83,128 +207,6 @@ def compare(res, intended='hello world'):
 	    print 'Alignment score:', alignment.score
 	    print 'Percent identity:', alignment.percentIdentity()
 	    print
-
-def digital(samplefile, processedfile, start, end, epsilon):
-	# naive version, look only at trend, don't count the things before
-	
-	if processedfile is None:
-		# processedfile = "digital" + str(epsilon) + ".txt"
-		processedfile = "processed.txt"
-	f = open(samplefile, 'r')
-	lines = f.readlines()
-	f.close()
-	fw = open(processedfile, 'w+')
-	fw.write("# digital " + str(epsilon) + " s: " + str(start) + " e: " + str(end) + "\n")
-	# up = '110'
-	# down = '80'
-	# up = '70'
-	# down = '30'
-	up = '50'
-	down = '25' 
-	direction = down
-	prev = int(lines[0].split(" ")[1])
-
-	if not end:
-		end = float(lines[-1].split(" ")[0])
-
-	for l in lines:
-		value = int(l.split(" ")[1])
-		time = float(l.split(" ")[0])
-
-		if time < float(start):
-			sys.stdout.write('skip smaller\r')
-			sys.stdout.flush()
-			prev = value
-			continue
-		elif float(time) >= float(end):
-			# print 'end reached', str(time), str(end), str(time >= end)
-			break
-
-		if abs(value - prev) <= epsilon: #difference is less than noise, stationary
-			pass	
-		elif value <= prev:
-			direction = down
-		else:
-			direction = up
-		fw.write(str(time) + " " + direction + "\n")
-		prev = value
-	fw.close()
-
-# def process(samplefile, processedfile, start, end, epsilon):
-# 	# slightly better for a specific case, keep a buffer and count, this way
-# 	# it accounts for random peaks
-# 	# used for 2 ms transmission rate
-# 	if processedfile is None:
-# 		processedfile = 'processed.txt'
-# 	f = open(samplefile, 'r')
-# 	lines = f.readlines()
-# 	f.close()
-# 	fw = open(processedfile, 'w+')
-# 	up = '60'
-# 	down = '30'
-# 	direction = down
-# 	buff = []
-# 	res = ''
-# 	amount = 0
-
-# 	prev = int(lines[0].split(" ")[1])
-
-# 	if not end:
-# 		end = float(lines[-1].split(" ")[0])
-
-# 	for l in lines:
-	
-# 		value = int(l.split(" ")[1])
-# 		time = l.split(" ")[0]
-
-# 		if time < float(start):
-# 			continue
-# 		elif time > float(end):
-# 			break
-
-# 		if abs(value - prev) <= epsilon: #stay
-# 			buff.append(direction)
-
-# 		elif value <= prev: #down
-
-# 			if direction != down:
-# 				if len(buff) <= 2: # noise, probably
-# 					continue
-
-# 				if len(buff) > 12:
-# 					res += '11'
-# 					amount = 25
-# 				else:
-# 					res+='1'
-# 					amount = 20
-
-# 				buff = []
-# 			direction = down
-# 			buff.append(direction)
-
-# 		else: #up
-
-# 			if direction != up:
-# 				if len(buff) <= 2: # noise, probably
-# 					continue
-
-# 				if len(buff) > 12:
-# 					res += '00'
-# 					amount = 25
-# 				else:
-# 					res += '0'
-# 					amount = 20
-
-# 				buff = []
-# 			direction = up
-# 			buff.append(direction)
-			
-# 		fw.write(time + " " + direction + " " + str(amount) + "\n")
-# 		amount = 0
-# 		prev = value
-
-# 	fw.close()
-# 	compare(res)
 
 if __name__ == '__main__':
 	# for i in range(1,7):

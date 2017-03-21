@@ -2,6 +2,7 @@
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 import re
 import numpy
 import os
@@ -11,16 +12,37 @@ from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 
 categories = ["101", "100", "011", "110", "001", "11", "00", "10", "01"]
 maxsize = 12
+sizes = []
 
 def main():
 	global maxsize
+	global sizes
+
 	data, targets = load_train_data()
-	# reg = GaussianNB(); print 'GaussianNB'
-	reg = RandomForestClassifier(); print 'RandomForest'
-	# reg = AdaBoostClassifier(); print 'AdaBoost'
-	# reg = MLPClassifier(); print 'ANN MLP'
-	reg.fit(data, targets)
-	print 'model trained'
+	# scaler = StandardScaler()
+	# scaler.fit(data)
+	# data = scaler.transform(data)
+	# # reg = GaussianNB(); print 'GaussianNB'
+	# # reg = RandomForestClassifier(); print 'RandomForest'
+	# # reg = AdaBoostClassifier(); print 'AdaBoost'
+	# reg = MLPClassifier(); print 'ANN MLP' 
+	# reg.fit(data, targets)
+	# print 'model trained'
+
+	reg = {}
+	scaler = {}
+	# classifier = GaussianNB; print 'GaussianNB'
+	# classifier = RandomForestClassifier; print 'RandomForest'
+	# classifier = AdaBoostClassifier; print 'AdaBoost'
+	classifier = MLPClassifier; print 'ANN MLP' 
+	for size in sizes:
+		sub = [e for e in zip(data,targets) if len(e[0]) == size]
+		subdata, subtarget = zip(*sub)
+		scaler[size] = StandardScaler()
+		scaler[size].fit(subdata)
+		subdata = scaler[size].transform(subdata)
+		reg[size] = classifier()
+		reg[size].fit(subdata, subtarget)
 
 	f = open('sample0.txt', 'r')
 	lines = f.readlines()
@@ -31,11 +53,6 @@ def main():
 	buff = []
 	res = ''
 	start = 0
-	# for approach 3
-	# tempprev = None
-	# tempprev = {}
-	# temp = '00'
-	# for approach 4
 	up = 'up'
 	down = 'down'
 	direction = down
@@ -48,49 +65,6 @@ def main():
 		time = float(l.split(" ")[0])
 		value = int(l.split(" ")[1])
 		buff.append(value)
-
-		# # 1. bad approach: fixed window of 7 from start
-		# # close to the one in process.py and get_training.py but with ML
-		# if len(buff) == 7:
-		# 	buff += [0,0,0,0]
-		# 	res += reg.predict(numpy.array(buff).reshape(1,-1))[0]
-		# 	buff = []
-
-		# # 2. predict always when 8 values
-		# # but I do it twice over partially overlapped windows
-		# if len(buff) >= 8:
-		# 	buff += [0,0,0,0]
-		# 	temp = reg.predict(numpy.array(buff).reshape(1,-1))[0]
-		# 	if tempprev:
-		# 		if temp == tempprev:
-		# 			res+=temp
-		# 		else:
-		# 			res+='-'
-		# 	tempprev = temp
-		# 	buff = buff[4:8]
-
-		# # 3. predict a number of times, remember when you started the sequence
-		# # in the end, take the most common one
-		# if len(buff) == 8:
-		# 	buff += [0,0,0,0]
-		# 	start+=1
-		# 	pred = reg.predict(numpy.array(buff).reshape(1,-1))[0]
-		# 	if not tempprev.has_key(pred):
-		# 		tempprev[pred] = 0
-		# 	tempprev[pred] += 1
-		# 	if start == 8:
-		# 		m = max(tempprev.values())
-		# 		res += [k for k,v in tempprev.items() if v == m][0]
-		# 		tempprev = {}
-		# 		start = 0
-		# 	buff = buff[1:8]
-
-		# # 4. mixed approach: follow the fluctuation manually and predict 
-		# # at the right times, with enough values
-		# shifted = False
-		# if abs(value - prev) > epsilon:
-		# 	shifted = True
-		# 	shifts+=1
 
 		shifted = False
 		if abs(value - prev) <= epsilon: #difference is less than noise, stationary
@@ -110,10 +84,16 @@ def main():
 			shifts = 0
 			# print len(buff), buff,
 			# last, two = buff[-2:]
-			buff += [0] * (maxsize - len(buff)) # fill in with zeros
-			pred = reg.predict(numpy.array(buff).reshape(1,-1))[0]
+
+			# buff += [0] * (maxsize - len(buff)) # fill in with zeros
+			# pred = reg.predict(numpy.array(buff).reshape(1,-1))[0]
+			# pred = reg.predict(scaler.transform(numpy.array(buff).reshape(1,-1)))[0]
+			if len(buff) in sizes:
+				buff += [0] * (min(sizes) - len(buff))
+				pred = reg[len(buff)].predict(scaler[len(buff)].transform(numpy.array(buff).reshape(1,-1)))[0]
+			
 			# print pred
-			res += pred
+				res += pred
 			# buff = [last,two]
 			# if abs(two-last) > epsilon:
 			# 	shifts+=1
@@ -147,6 +127,9 @@ def compare(res, intended='hello world'):
 	print 'result'
 	print res
 	print 
+
+	# intended = cut_zeroes(intended)
+	# res = cut_zeroes(res)
 	
 	a = Sequence(list(res))
 	b = Sequence(list(intended))
@@ -155,21 +138,23 @@ def compare(res, intended='hello world'):
 	bEncoded = v.encodeSequence(b)
 
 	# Create a scoring and align the sequences using global aligner.
-	scoring = SimpleScoring(2, -1)
-	aligner = GlobalSequenceAligner(scoring, -2)
+	scoring = SimpleScoring(2, -2)
+	aligner = GlobalSequenceAligner(scoring, -1)
 	score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
 
 	# Iterate over optimal alignments and print them.
-	for encoded in encodeds:
-	    alignment = v.decodeSequenceAlignment(encoded)
-	    print alignment
-	    print 'Alignment score:', alignment.score
-	    print 'Percent identity:', alignment.percentIdentity()
-	    print
+	# for encoded in encodeds:
+	encoded = encodeds[0]	
+	alignment = v.decodeSequenceAlignment(encoded)
+	print alignment
+	print 'Alignment score:', alignment.score
+	print 'Percent identity:', alignment.percentIdentity()
+	print
 
 def load_train_data():
 	global categories
 	global maxsize
+	global sizes
 
 	folder = 'train'
 	data = []
@@ -187,20 +172,22 @@ def load_train_data():
 						if len(d) > maxsize:
 							pass
 						else:
+							if len(d) not in sizes:
+								sizes.append(len(d))
 							data.append(d)
 							targets.append(cat)
 						f.close()
 						break
+	print sizes
 	return (numpy.array(data), numpy.array(targets))
 
 def get_data(lines, maxsize):
 	a = []
 	for l in lines:
 		a.append(int(l.split(" ")[1]))
-	more = maxsize - len(a)
-	for i in xrange(more):
-		a.append(0)
-	# print len(a)
+	# more = maxsize - len(a)
+	# for i in xrange(more):
+	# 	a.append(0)
 	return a
 
 if __name__ == '__main__':
