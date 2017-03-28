@@ -3,6 +3,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 import re
 import numpy
 import os
@@ -13,6 +14,12 @@ from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 categories = ["101", "100", "011", "110", "001", "11", "00", "10", "01"]
 maxsize = 12
 sizes = []
+
+class IdScaler(object):
+	def fit(self, a):
+		pass
+	def transform(self, a):
+		return a
 
 def main():
 	global maxsize
@@ -31,14 +38,17 @@ def main():
 
 	reg = {}
 	scaler = {}
-	# classifier = GaussianNB; print 'GaussianNB'
+	classifier = GaussianNB; print 'GaussianNB'
 	# classifier = RandomForestClassifier; print 'RandomForest'
 	# classifier = AdaBoostClassifier; print 'AdaBoost'
-	classifier = MLPClassifier; print 'ANN MLP' 
+	# classifier = MLPClassifier; print 'ANN MLP' 
+	# classifier = SVC; print 'SVC'
+	scal = IdScaler; print "no scaling"
+	# scal = StandardScaler; print "std scaler"
 	for size in sizes:
 		sub = [e for e in zip(data,targets) if len(e[0]) == size]
 		subdata, subtarget = zip(*sub)
-		scaler[size] = StandardScaler()
+		scaler[size] = scal()
 		scaler[size].fit(subdata)
 		subdata = scaler[size].transform(subdata)
 		reg[size] = classifier()
@@ -182,12 +192,21 @@ def load_train_data():
 	return (numpy.array(data), numpy.array(targets))
 
 def get_data(lines, maxsize):
+	# a = []
+	# for l in lines:
+	# 	a.append(int(l.split(" ")[1]))
+	# # more = maxsize - len(a)
+	# # for i in xrange(more):
+	# # 	a.append(0)
+	# return a
+
+	# -- differential version --
 	a = []
+	prev = float(lines[0].split(" ")[1])
 	for l in lines:
-		a.append(int(l.split(" ")[1]))
-	# more = maxsize - len(a)
-	# for i in xrange(more):
-	# 	a.append(0)
+		v = float(l.split(" ")[1])
+		a.append(v - prev)
+		prev = v
 	return a
 
 if __name__ == '__main__':

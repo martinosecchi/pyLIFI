@@ -27,9 +27,10 @@ class lifiTx(threading.Thread):
 		super(lifiTx, self).start()
 
 	def stop(self):
+		print 'closing tx'
 		self.do_exit.set()
 		time.sleep(1)
-		if self.arduino:
+		if self.arduino and not self.arduino.closed:
 			self.arduino.write(bytearray(['0']))
 			self.arduino.close()
 
@@ -45,7 +46,7 @@ class lifiTx(threading.Thread):
 
 	def enlight(self, msg):
 		for b in msg:
-			self.arduino.write(bytearray(b)) #send 1 byte at a time, chars bitch
+			self.arduino.write(bytearray(b)) #send 1 byte at a time, as chars
 			# if b == '0':
 			# 	self.arduino.write(bytearray(['1','0']))
 			# elif b == '1':

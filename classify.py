@@ -9,7 +9,7 @@ from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 
 class LiFiClassifier(object):
 	def __init__(self, args={}):
-		self.labels = ['1', '0', '11', '00']
+		# self.labels = ['1', '0', '11', '00']
 		# the difference between two subsequent values is sonsidered noise
 		# below the epsilon value (default 4)
 		self.epsilon = args['epsilon'] if args.has_key('epsilon') else None
@@ -58,10 +58,11 @@ class LiFiClassifier(object):
 		self.result += pred
 		self.size = 1
 		self.seq = self.direction
+		return pred
 
 	def process(self, lines):
 		if not self.end:
-			self.end = int(lines[-1].split(" ")[0])
+			self.end = float(lines[-1].split(" ")[0])
 		prev = float(lines[0].split(" ")[1])
 		timestart = float(lines[0].split(" ")[0])
 
@@ -121,10 +122,19 @@ class LiFiClassifier(object):
 		print avg, variance, stddev
 		self.epsilon = stddev
 
-	def compare(self, res):
+	def compare(self, intended=None, res=None, v=None):
+		if v is None:
+			v = self.v
+		if res is None:
+			res = self.result
+		if intended is None:
+			intended = self.intended
+		intended = manchester(intended)
+		
+		# res = cut_zeroes(res)
+		# intended = cut_zeroes(intended)
 
-		intended = manchester(self.intended)
-		if self.v:
+		if v:
 			print 
 			print 'intended'
 			print intended
@@ -132,20 +142,25 @@ class LiFiClassifier(object):
 			print 'result'
 			print res
 			print 
-		
+
 		a = Sequence(list(res))
 		b = Sequence(list(intended))
-		v = Vocabulary()
-		aEncoded = v.encodeSequence(a)
-		bEncoded = v.encodeSequence(b)
+		voc = Vocabulary()
+		aEncoded = voc.encodeSequence(a)
+		bEncoded = voc.encodeSequence(b)
 
 		scoring = SimpleScoring(1, -1) # match, mismatch 2, -1
 		aligner = GlobalSequenceAligner(scoring, -1) # score, gap score -2
-		score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
-
-		for encoded in encodeds:
-		    alignment = v.decodeSequenceAlignment(encoded)
-		    if self.v:
+		
+		try:
+			score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
+		except:
+			print "too much, couldn't align"
+			encodeds = []
+			
+		for encoded in encodeds[:1]:
+		    alignment = voc.decodeSequenceAlignment(encoded)
+		    if v:
 				print alignment
 		    print 'Percent identity:', alignment.percentIdentity()
 		    print
@@ -227,7 +242,7 @@ def main(argv):
 	# model.find_epsilon(lines[1:102])
 	# model.process(lines[2100:2600]) # sample0.txt
 	model.process(lines[2:]) #first line sometimes a comment, second might be truncated
-	print model.compare(model.result)
+	print model.compare()
 	
 
 if __name__ == '__main__':

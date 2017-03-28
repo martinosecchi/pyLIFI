@@ -4,8 +4,8 @@ import time
 import serial
 import datetime
 
-STX = bytearray([2])
-ETX = bytearray([3])
+STX = "1010101010100110" #bytearray([2])
+ETX = "1010101010100101" #bytearray([3])
 rx_addr = '/dev/cu.usbmodem1411' #Yun
 
 def now():
@@ -35,6 +35,7 @@ class lifiRx(threading.Thread):
 		super(lifiRx, self).start()
 
 	def stop(self):
+		print 'closing rx'
 		self.do_exit.set()
 		time.sleep(1)
 		if self.f:
@@ -48,12 +49,16 @@ class lifiRx(threading.Thread):
 			start = now()
 		#skip until first, the set prev as the value
 		prev = None
-		while not prev:
+		while not prev and not self.do_exit.isSet():
 			try:
 				prev = self.arduino.readline()
 			except:
 				pass
-		prev = float(prev.split(" ")[1])
+		try:
+			prev = float(prev.split(" ")[1])
+		except:
+			print " couldn't read, prev not set"
+			return
 
 		while not self.do_exit.isSet():
 			l = None
@@ -70,12 +75,22 @@ class lifiRx(threading.Thread):
 				value = (value+prev)/2
 				self.f.write( time + " " + str(value) + "\n" )
 				# self.f.write( time + " " + str(value - prev) + "\n") # differantial signal
+			elif l: 
+				pass
+				# value = (value+prev)/2
+				# print time + " " + str(value)
 			if value:
 				prev = value
 
+	def read(self):
+		try:
+			return self.arduino.readline()
+		except:
+			return None
+		
 def main():
 	global rx_addr
-	rx = lifiRx(rx_addr)
+	rx = lifiRx(rx_addr)#, False)
 	rx.start()
 	cmd = ''
 	while cmd != 'stop':

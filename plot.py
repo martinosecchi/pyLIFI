@@ -19,7 +19,7 @@ def help():
 	print ' -y: or --yrange= 	yrange, form s:e no space'
 	print ''
 	print 'for split mode you need a processedfile and a samplefile, or use the defaults ones'
-	print 'zoom only uses the samplefile, but still the split interval'
+	print 'zoom only uses the samplefile, but still needs the split interval'
 	print ''
 
 def main(argv):
