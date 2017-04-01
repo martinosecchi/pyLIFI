@@ -69,40 +69,20 @@ class lifiRx(threading.Thread):
 	def run(self):
 		if self.do_write:
 			self.f = open("sample.txt", "w+")
-			start = now()
-		#skip until first, the set prev as the value
-		print 'lifiRx, waiting first value..'
-		prev = None
-		while not prev and not self.do_exit.isSet():
-			try:
-				prev = self.arduino.readline()
-			except:
-				pass
-		try:
-			prev = float(prev.split(" ")[1])
-		except:
-			print " couldn't read, prev not set"
-			return
+		#skip until first, the set prev as the value		
 		print 'lifiRx, receiving'
 		while not self.do_exit.isSet():
 			l = None
-			value = None
 			try:
 				l = self.arduino.readline()
-				value = float(l.split(" ")[1])
-				time = l.split(" ")[0]
 			except:
 				pass
-
-			if l and value:
-				value = (value+prev)/2
+			if l :
 				if self.do_write:
-					self.f.write( time + " " + str(value) + "\n" )
-					# self.f.write( time + " " + str(value - prev) + "\n") # differantial signal
+					self.f.write(l)
 				if self.do_buffer: 
-					self.queue.put(time + " " + str(value))
-			if value:
-				prev = value
+					self.queue.put(l)
+
 		
 def main():
 	global rx_addr
