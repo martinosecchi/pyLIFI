@@ -3,6 +3,7 @@ import threading
 import time
 import serial
 import datetime
+import Queue
 
 STX = "1010101010100110" #bytearray([2])
 ETX = "1010101010100101" #bytearray([3])
@@ -17,13 +18,16 @@ def seconds(start):
 
 class lifiRx(threading.Thread):
 
-	def __init__(self, addr, do_write=True):
+	def __init__(self, buff=True, addr=rx_addr, write=False):
 		super(lifiRx, self).__init__()
 		self.serial_addr = addr
 		self.do_exit = threading.Event()
 		self.arduino = None
 		self.f = None
-		self.do_write = do_write
+		self.do_write = write
+		self.do_buffer = buff
+		self.queue = Queue.Queue()
+		self.stopped = False
 
 	def start(self):
 		try:
@@ -42,12 +46,32 @@ class lifiRx(threading.Thread):
 			self.f.close()
 		if self.arduino:
 			self.arduino.close()
+		self.stopped = True
+
+	def read(self):
+		try:
+			return self.arduino.read()
+		except:
+			return None
+
+	def readline(self):
+		try:
+			return self.arduino.readline()
+		except:
+			return None
+
+	def getline(self):
+		try:
+			return self.queue.get_nowait()
+		except Queue.Empty:
+			return None
 
 	def run(self):
 		if self.do_write:
 			self.f = open("sample.txt", "w+")
 			start = now()
 		#skip until first, the set prev as the value
+		print 'lifiRx, waiting first value..'
 		prev = None
 		while not prev and not self.do_exit.isSet():
 			try:
@@ -59,7 +83,7 @@ class lifiRx(threading.Thread):
 		except:
 			print " couldn't read, prev not set"
 			return
-
+		print 'lifiRx, receiving'
 		while not self.do_exit.isSet():
 			l = None
 			value = None
@@ -69,28 +93,20 @@ class lifiRx(threading.Thread):
 				time = l.split(" ")[0]
 			except:
 				pass
-			if l and self.do_write:
-				# print l,
-				# self.f.write(l)
+
+			if l and value:
 				value = (value+prev)/2
-				self.f.write( time + " " + str(value) + "\n" )
-				# self.f.write( time + " " + str(value - prev) + "\n") # differantial signal
-			elif l: 
-				pass
-				# value = (value+prev)/2
-				# print time + " " + str(value)
+				if self.do_write:
+					self.f.write( time + " " + str(value) + "\n" )
+					# self.f.write( time + " " + str(value - prev) + "\n") # differantial signal
+				if self.do_buffer: 
+					self.queue.put(time + " " + str(value))
 			if value:
 				prev = value
-
-	def read(self):
-		try:
-			return self.arduino.readline()
-		except:
-			return None
 		
 def main():
 	global rx_addr
-	rx = lifiRx(rx_addr)#, False)
+	rx = lifiRx(False, rx_addr, True)
 	rx.start()
 	cmd = ''
 	while cmd != 'stop':

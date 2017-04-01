@@ -9,15 +9,12 @@ from lifiTx import lifiTx
 from classify import LiFiClassifier
 import sys
 
-tx_addr = '/dev/cu.usbserial-DA0147XE' #RedBoard
-rx_addr = '/dev/cu.usbmodem1411' #Yun
-
 def now():
 	return datetime.datetime.now()
 
 def main():
-	tx = lifiTx(tx_addr)
-	rx = lifiRx(rx_addr, False)
+	tx = lifiTx()
+	rx = lifiRx()
 	tx.start()
 	rx.start()
 	rx.do_exit.set() # I'll just read from this thread instead

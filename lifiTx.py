@@ -4,13 +4,13 @@ import time
 import serial
 import Queue
 
-STX = "XSTX"#bytearray([2])
-ETX = "XETX"#bytearray([3])
+STX = bytearray([2])
+ETX = bytearray([3])
 tx_addr = '/dev/cu.usbserial-DA0147XE' #RedBoard
 
 
 class lifiTx(threading.Thread):
-	def __init__(self, address):
+	def __init__(self, address=tx_addr):
 		super(lifiTx, self).__init__()
 		self.arduino = None
 		self.serial_addr = address
@@ -37,21 +37,12 @@ class lifiTx(threading.Thread):
 	def send(self, msg):
 		self.queue.put(msg)
 
-	# def to_binary(self, st):
-	# 	return ''.join(format(x, 'b') for x in bytearray(st))
-		
-
-	# def encoded(self, msg):
-	# 	return STX + msg + ETX
 
 	def enlight(self, msg):
+		self.arduino.write(STX)
 		for b in msg:
 			self.arduino.write(bytearray(b)) #send 1 byte at a time, as chars
-			# if b == '0':
-			# 	self.arduino.write(bytearray(['1','0']))
-			# elif b == '1':
-			# 	self.arduino.write(bytearray(['0','1']))
-
+		self.arduino.write(ETX)
 	def check(self):
 		return self.arduino.readline()
 
@@ -66,8 +57,9 @@ class lifiTx(threading.Thread):
 				self.enlight(msg)
 
 def main():
-	global tx_addr
-	tx = lifiTx(tx_addr)
+	# global tx_addr
+	# tx = lifiTx(tx_addr)
+	tx = lifiTx()
 	tx.start()
 	cmd = ''
 	while cmd != 'stop':
@@ -78,6 +70,8 @@ def main():
 			print tx.check()
 		elif cmd == "01":
 			tx.send("01"*1000)
+		elif cmd == 'stx':
+			tx.arduino.write(STX)
 		else:
 			tx.send(cmd)
 

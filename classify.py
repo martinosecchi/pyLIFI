@@ -6,8 +6,82 @@ from alignment.sequence import Sequence
 from alignment.vocabulary import Vocabulary
 from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 
+class LiFiClassifierLight(object):
+	""" 
+	this class focuses on live predictions, 
+	storing intermediate results and classifying in linear time
+	also 
+	"""
+	def __init__(self, args={}):
+		self.epsilon = args.get('epsilon', 2)
+		self.prev = None
+		self.seqstart = None
+		# up: True, down: False
+		self.direction = True
+		# s, m, e form a peak, either up or down
+		self.s = None #'start direction'
+
+		self._doubletime = 390 #400
+		self._singletime = 180 #200
+
+
+	def feed(self, time, value): # give me a value!
+		pred = None
+		if self.prev is None:
+			self.prev = value
+			self.seqstart = time
+			self.s = self.direction
+			return pred
+
+		# staying
+		if abs(value - self.prev) <= self.epsilon:
+			pass
+
+		#going down
+		elif value <= self.prev: 
+			if self.direction: # up	
+				pred = self._predict(time)
+
+		# going up
+		elif value > self.prev: 
+			if not self.direction: # down
+				pred = self._predict(time)
+
+		self.prev = value
+		return pred
+	
+	def _predict(self, time):
+		m = self.direction
+		e = not self.direction	
+		
+		delta = (time-self.seqstart)*100
+		if m == self.s:
+			delta += 100
+		pred = '-'
+		if delta >= self._doubletime:
+			# pred = '11' if mid == self.up else '00'
+			pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime)
+		else:
+			pred = '1' if m else '0'
+
+		self.s = self.direction
+		self.direction = not self.direction
+		self.seqstart = time
+		return pred
+	
+	def _printpred(self, m, e, delta, pred):
+		seq = 'u' if self.s else 'd'
+		seq += str(int(delta))
+		seq += 'u' if m else 'd'
+		seq += 'u' if e else 'd'
+		print seq, pred
+
 
 class LiFiClassifier(object):
+	"""
+	this class can be used for predicting a given sequence of values
+	ideal for reading files and predict
+	"""
 	def __init__(self, args={}):
 		# self.labels = ['1', '0', '11', '00']
 		# the difference between two subsequent values is sonsidered noise
@@ -47,8 +121,8 @@ class LiFiClassifier(object):
 			print delta, 
 
 		if delta >= isdoubleafter:
-			# pred = '11' if mid == self.up else '00'
-			pred = '1'*(delta/issingle) if mid == self.up else '0'*(delta/issingle)
+			pred = '11' if mid == self.up else '00'
+			# pred = '1'*(delta/issingle) if mid == self.up else '0'*(delta/issingle)
 		else:
 			pred = '1' if mid == self.up else '0'
 
@@ -56,7 +130,6 @@ class LiFiClassifier(object):
 			print pred
 		
 		self.result += pred
-		self.size = 1
 		self.seq = self.direction
 		return pred
 
@@ -64,7 +137,7 @@ class LiFiClassifier(object):
 		if not self.end:
 			self.end = float(lines[-1].split(" ")[0])
 		prev = float(lines[0].split(" ")[1])
-		timestart = float(lines[0].split(" ")[0])
+		seqstart = float(lines[0].split(" ")[0])
 
 		if self.epsilon is None:
 			self.preprocess(lines, 100)
@@ -77,7 +150,7 @@ class LiFiClassifier(object):
 
 			if time < float(self.start):
 				prev = value
-				timestart = time
+				seqstart = time
 				continue
 			elif float(time) >= float(self.end):
 				break
@@ -89,26 +162,29 @@ class LiFiClassifier(object):
 			#going down
 			elif value <= prev: 
 				if self.direction == self.up:
-					delta = int((time-timestart)*100)
+					delta = int((time-seqstart)*100)
 					self.seq += str(delta) + self.direction + self.down
 					self.predict(self.seq)
 					self.direction = self.down
-					timestart = time
+					seqstart = time
 
 			# going up
 			elif value > prev: 
 				if self.direction == self.down:
-					delta = int((time-timestart)*100)
+					delta = int((time-seqstart)*100)
 					self.seq += str(delta) + self.direction + self.up
 					self.predict(self.seq)
 					self.direction = self.up
-					timestart = time
+					seqstart = time
 
 			prev = value
 
-		delta = int((time-timestart)*100)
+		delta = int((time-seqstart)*100)
 		self.seq += str(delta) + self.direction + self.direction
 		self.predict(self.seq)
+		res = self.result
+		self.result = ''
+		return res
 
 
 	def preprocess(self, lines, N):
@@ -241,9 +317,22 @@ def main(argv):
 
 	# model.find_epsilon(lines[1:102])
 	# model.process(lines[2100:2600]) # sample0.txt
-	model.process(lines[2:]) #first line sometimes a comment, second might be truncated
-	print model.compare()
+	res1 = model.process(lines[2:]) #first line sometimes a comment, second might be truncated
+	print model.compare(model.intended, res1, v=True)
+
+	lightmodel = LiFiClassifierLight()
+	lightmodel.epsilon = model.epsilon
+	lightmodel.direction = False
+	res2 = ""
 	
+	print 'EPSILON:', lightmodel.epsilon
+	print 'start line', lines[2100]
+
+	for l in lines[2100:2600]:
+		time, value = l.split(" ")
+		r = lightmodel.feed(float(time), float(value))
+		res2 += r if r else ''
+	print model.compare(model.intended, res2, True)
 
 if __name__ == '__main__':
 	main(sys.argv[1:])
