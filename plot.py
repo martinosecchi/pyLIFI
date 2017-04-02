@@ -95,7 +95,7 @@ def plots(folder, samplefile, processedfile, interval, yrange, splitint):
 		if yrange:
 			cmds.append("set yrange ["+ yrange +"]")
 		cmds.append("plot \"" + processedfile + "\" u 1:2 w linespoints title \"processed\" pt 12, \""
-		 + samplefile + "\" u 1:2 w linespoints title \"original\" pt 12, 0 notitle, -4 notitle, 4 notitle")
+		 + samplefile + "\" u 1:2 w linespoints title \"original\" pt 12")
 		cmds.append("quit")
 		f = p.stdin
 		print >> f, '\n'.join(cmds)

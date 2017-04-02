@@ -29,6 +29,13 @@ class lifiRx(threading.Thread):
 		self.queue = Queue.Queue()
 		self.stopped = False
 
+	def connect(self):
+		try:
+			self.arduino = serial.Serial(self.serial_addr, 9600, timeout=1)
+		except:
+			print 'could not connect, rx closing'
+			self.stop()
+
 	def start(self):
 		try:
 			self.arduino = serial.Serial(self.serial_addr, 9600, timeout=1)
@@ -60,7 +67,7 @@ class lifiRx(threading.Thread):
 		except:
 			return None
 
-	def getline(self):
+	def getbuffered(self):
 		try:
 			return self.queue.get_nowait()
 		except Queue.Empty:
@@ -69,14 +76,21 @@ class lifiRx(threading.Thread):
 	def run(self):
 		if self.do_write:
 			self.f = open("sample.txt", "w+")
-		#skip until first, the set prev as the value		
-		print 'lifiRx, receiving'
+		print 'lifiRx waiting for sensory data..'
+		try:
+			while not self.do_exit.isSet() and not self.arduino.readline():
+				pass
+		except:
+			print 'lifiRx problem when testing reception'
+			self.stop()
+		print 'lifiRx receiving'
 		while not self.do_exit.isSet():
 			l = None
 			try:
 				l = self.arduino.readline()
-			except:
-				pass
+			except Exception as e:
+				print e
+				
 			if l :
 				if self.do_write:
 					self.f.write(l)
@@ -86,7 +100,7 @@ class lifiRx(threading.Thread):
 		
 def main():
 	global rx_addr
-	rx = lifiRx(False, rx_addr, True)
+	rx = lifiRx(buff=False, write=True)
 	rx.start()
 	cmd = ''
 	while cmd != 'stop':

@@ -20,10 +20,9 @@ class LiFiClassifierLight(object):
 		self.direction = True
 		# s, m, e form a peak, either up or down
 		self.s = None #'start direction'
-
 		self._doubletime = 390 #400
 		self._singletime = 180 #200
-
+		self.verbose = False
 
 	def feed(self, time, value): # give me a value!
 		pred = None
@@ -59,10 +58,13 @@ class LiFiClassifierLight(object):
 			delta += 100
 		pred = '-'
 		if delta >= self._doubletime:
-			# pred = '11' if mid == self.up else '00'
-			pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime)
+			pred = '11' if m else '00' # no long strikes
+			# pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime) # long strikes
 		else:
 			pred = '1' if m else '0'
+
+		if self.verbose:
+			self._printpred(m,e,delta,pred)
 
 		self.s = self.direction
 		self.direction = not self.direction
@@ -121,8 +123,8 @@ class LiFiClassifier(object):
 			print delta, 
 
 		if delta >= isdoubleafter:
-			pred = '11' if mid == self.up else '00'
-			# pred = '1'*(delta/issingle) if mid == self.up else '0'*(delta/issingle)
+			# pred = '11' if mid == self.up else '00'
+			pred = '1'*(delta/issingle) if mid == self.up else '0'*(delta/issingle)
 		else:
 			pred = '1' if mid == self.up else '0'
 
@@ -289,7 +291,7 @@ def help():
 
 def main(argv):
 
-	samplefile = "sample.txt"  #"sample0.txt" #original helloworld
+	samplefile = "sample0.txt" 
 	model = LiFiClassifier()
 
 	opts, args = getopt.getopt(argv, 'hi:f:r:e:v', ['interval=', 'file=', 'epsilon=', 'result='])
@@ -315,6 +317,10 @@ def main(argv):
 	lines = f.readlines()
 	f.close()
 
+	model.start = 4400
+	model.end = 4800
+	model.epsilon = 6
+
 	# model.find_epsilon(lines[1:102])
 	# model.process(lines[2100:2600]) # sample0.txt
 	res1 = model.process(lines[2:]) #first line sometimes a comment, second might be truncated
@@ -323,6 +329,7 @@ def main(argv):
 	lightmodel = LiFiClassifierLight()
 	lightmodel.epsilon = model.epsilon
 	lightmodel.direction = False
+	lightmodel.verbose = True
 	res2 = ""
 	
 	print 'EPSILON:', lightmodel.epsilon

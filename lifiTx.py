@@ -69,9 +69,13 @@ def main():
 		elif cmd == 'check':
 			print tx.check()
 		elif cmd == "01":
-			tx.send("01"*1000)
+			tx.arduino.write(bytearray("01"*1000))
 		elif cmd == 'stx':
 			tx.arduino.write(STX)
+		elif cmd == '0':
+			tx.arduino.write(bytearray('0'))
+		elif cmd == '1':
+			tx.arduino.write(bytearray('1'))
 		else:
 			tx.send(cmd)
 

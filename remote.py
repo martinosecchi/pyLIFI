@@ -13,7 +13,7 @@ def main():
 	stdscr.idlok(1)
 	stdscr.scrollok(1)
 	# stdscr.nodelay(1)
-	curses.halfdelay(2) # 2 tenths of second = 20 ms
+	curses.halfdelay(2) # tenths of second 1 -> 100 ms
 
 	tx = lifiTx()
 	tx.start()
@@ -47,7 +47,7 @@ def main():
 		except:
 			stdscr.addstr(i,0,'stop  ')
 			# tx.arduino.write(bytearray(['1']))
-			tx.arduino.write(bytearray('0')) # to compensate helfdelay mode i need to send more
+			tx.arduino.write(bytearray('0'))
 	curses.nocbreak(); stdscr.keypad(0); curses.echo()
 	curses.endwin()
 	tx.stop()
