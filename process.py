@@ -70,10 +70,10 @@ def digital(samplefile, processedfile, start, end, epsilon, up, down):
 	if up is None and down is None:
 		# up = '110'
 		# down = '80'
-		# up = '70'
-		# down = '30'
-		up = '50'
-		down = '25' 
+		up = '70'
+		down = '30'
+		# up = '50'
+		# down = '25' 
 	direction = down
 	prev = float(lines[1].split(" ")[1])
 

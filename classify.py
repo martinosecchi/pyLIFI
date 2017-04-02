@@ -20,8 +20,8 @@ class LiFiClassifierLight(object):
 		self.direction = True
 		# s, m, e form a peak, either up or down
 		self.s = None #'start direction'
-		self._doubletime = 390 #400
-		self._singletime = 180 #200
+		self._doubletime = 340 #390 #~400
+		self._singletime = 170 #180 #~200
 		self.verbose = False
 
 	def feed(self, time, value): # give me a value!
@@ -58,8 +58,8 @@ class LiFiClassifierLight(object):
 			delta += 100
 		pred = '-'
 		if delta >= self._doubletime:
-			pred = '11' if m else '00' # no long strikes
-			# pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime) # long strikes
+			# pred = '11' if m else '00' # no long strikes
+			pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime) # long strikes
 		else:
 			pred = '1' if m else '0'
 
@@ -227,9 +227,11 @@ class LiFiClassifier(object):
 		aEncoded = voc.encodeSequence(a)
 		bEncoded = voc.encodeSequence(b)
 
-		scoring = SimpleScoring(1, -1) # match, mismatch 2, -1
+		# scoring = SimpleScoring(1, -1) # match, mismatch 2, -1
+		# aligner = GlobalSequenceAligner(scoring, -1) # score, gap score -2
+		scoring = SimpleScoring(1, -4) # match, mismatch 2, -1
 		aligner = GlobalSequenceAligner(scoring, -1) # score, gap score -2
-		
+
 		try:
 			score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
 		except:
@@ -241,7 +243,7 @@ class LiFiClassifier(object):
 		    if v:
 				print alignment
 		    print 'Percent identity:', alignment.percentIdentity()
-		    print
+		    print 'Score:', score
 
 def get_avg(lines):
 	# the average value
@@ -277,41 +279,9 @@ def manchester(string):
 			s +=  "01" if (c & (1 << i)) else "10"
 	return s;
 
-
-
-def help():
-	print 'use LiFiClassifier to predict lifi transmission stored in a file as "timestamp value" from the sensor'
-	print 'usage:'
-	print '-i to specify a time interval for prediction as start:finish'
-	print '-f for the file where to read from'
-	print '-e to specify the noise factor'
-	print 'if epsilon is not specified, it will be found through preprocessing phase in rest mode'
-	print '-r to specifiy the result to compare the predicition with (deafaults to hello world)'
-	print '-v for verbose output (no argument)'
-
-def main(argv):
-
+def test():
 	samplefile = "sample0.txt" 
 	model = LiFiClassifier()
-
-	opts, args = getopt.getopt(argv, 'hi:f:r:e:v', ['interval=', 'file=', 'epsilon=', 'result='])
-
-	for opt, arg in opts:
-		if opt == '-h':
-			help()
-			return
-		elif opt == '-i' or opt == '--interval':
-			model.start = int(arg.split(":")[0])
-			model.end = int(arg.split(":")[1])
-		elif opt == '-f' or opt == '--file':
-			samplefile = arg
-		elif opt == '-e' or opt == '--epsilon':
-			model.epsilon = int(arg)
-		elif opt == '-r' or opt == '--result':
-			model.intended = arg
-		elif opt == '-v':
-			model.v = True
-
 	print 'FILE:',samplefile
 	f = open(samplefile, 'r')
 	lines = f.readlines()
@@ -320,10 +290,7 @@ def main(argv):
 	model.start = 4400
 	model.end = 4800
 	model.epsilon = 6
-
-	# model.find_epsilon(lines[1:102])
-	# model.process(lines[2100:2600]) # sample0.txt
-	res1 = model.process(lines[2:]) #first line sometimes a comment, second might be truncated
+	res1 = model.process(lines[2:])
 	print model.compare(model.intended, res1, v=True)
 
 	lightmodel = LiFiClassifierLight()
@@ -340,6 +307,79 @@ def main(argv):
 		r = lightmodel.feed(float(time), float(value))
 		res2 += r if r else ''
 	print model.compare(model.intended, res2, True)
+
+def help():
+	print 'use LiFiClassifier to predict lifi transmission stored in a file as "timestamp value" from the sensor'
+	print 'usage:'
+	print '-i to specify a time interval for prediction as start:finish'
+	print '-f for the file where to read from'
+	print '-e to specify the noise factor'
+	print 'if epsilon is not specified, it will be found through preprocessing phase in rest mode'
+	print '-r to specifiy the result to compare the predicition with (deafaults to hello world)'
+	print '-v for verbose output (no argument)'
+	print '-c if you want to encapsulate the intended result between stx and etx'
+
+def main(argv):
+
+	samplefile = "sample0.txt" 
+	model = LiFiClassifier()
+	epsilon = 2
+	encapsulated = False
+	opts, args = getopt.getopt(argv, 'hi:f:r:e:vc', ['interval=', 'file=', 'epsilon=', 'result='])
+
+	for opt, arg in opts:
+		if opt == '-h':
+			help()
+			return
+		elif opt == '-i' or opt == '--interval':
+			model.start = int(arg.split(":")[0])
+			model.end = int(arg.split(":")[1])
+		elif opt == '-f' or opt == '--file':
+			samplefile = arg
+		elif opt == '-e' or opt == '--epsilon':
+			epsilon = int(arg)
+		elif opt == '-r' or opt == '--result':
+			model.intended = arg
+		elif opt == '-v':
+			model.v = True
+		elif opt == '-c':
+			encapsulated = True
+
+	if encapsulated:
+		model.intended = '\x02' + model.intended + '\x03'
+
+	print 'FILE:',samplefile
+	f = open(samplefile, 'r')
+	lines = f.readlines()
+	f.close()
+
+	# print '--Slow version--'
+	model.epsilon = epsilon
+	# res1 = model.process(lines[2:]) #first line sometimes a comment, second might be truncated
+	# print model.compare(model.intended, res1, v=True)
+
+	lightmodel = LiFiClassifierLight()
+	lightmodel.epsilon = model.epsilon
+	lightmodel.direction = False
+	lightmodel.verbose = True
+	res2 = ""
+	
+	print '--Light version--'
+	print 'EPSILON:', lightmodel.epsilon
+	print 'start line', lines[2]
+	last = None
+	for l in lines[2:]:
+		time, value = l.split(" ")
+		if float(time) < model.start:
+				continue
+		elif float(time) >= model.end:
+				last = float(time)
+				break
+		r = lightmodel.feed(float(time), float(value))
+		res2 += r if r else ''
+	res2 += lightmodel._predict(last) if last else ''
+	print model.compare(model.intended, res2, True)
+	# print 'heavy vs light', res2 in res1
 
 if __name__ == '__main__':
 	main(sys.argv[1:])
