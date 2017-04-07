@@ -32,14 +32,14 @@ class lifiRx(threading.Thread):
 	def connect(self):
 		try:
 			self.arduino = serial.Serial(self.serial_addr, 9600, timeout=1)
-		except:
+		except serial.SerialException, AttributeError:
 			print 'could not connect, rx closing'
 			self.stop()
 
 	def start(self):
 		try:
 			self.arduino = serial.Serial(self.serial_addr, 9600, timeout=1)
-		except:
+		except serial.SerialException, AttributeError:
 			print 'could not connect, rx closing'
 			self.stop()
 		time.sleep(1)
@@ -58,13 +58,13 @@ class lifiRx(threading.Thread):
 	def read(self):
 		try:
 			return self.arduino.read()
-		except:
+		except serial.SerialException, AttributeError:
 			return None
 
 	def readline(self):
 		try:
 			return self.arduino.readline()
-		except:
+		except serial.SerialException, AttributeError:
 			return None
 
 	def getbuffered(self):
@@ -80,7 +80,7 @@ class lifiRx(threading.Thread):
 		try:
 			while not self.do_exit.isSet() and not self.arduino.readline():
 				pass
-		except:
+		except serial.SerialException, AttributeError:
 			print 'lifiRx problem when testing reception'
 			self.stop()
 		print 'lifiRx receiving'
@@ -88,7 +88,7 @@ class lifiRx(threading.Thread):
 			l = None
 			try:
 				l = self.arduino.readline()
-			except Exception as e:
+			except serial.SerialException:
 				print e
 				
 			if l :

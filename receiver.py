@@ -44,20 +44,16 @@ def main():
 					bit = classifier.feed(float(time), float(value))
 				except ValueError:
 					bit = None
-				except KeyboardInterrupt:
-					print 'catched inside'
-					stop = True
-					break
 
 				if bit: # a prediction of 1 or more bits
 					buff16.append(bit)
 					cmd = reduce(lambda x,y: x+y, buff16)
 					# sys.stdout.write(" %100s "% cmd)
 					if started and not ended and (i >= len3bytes or (ETX in cmd and i >= len3bytes - mismatches_prob)):
-						if i >= len3bytes:
-							print 'truncated',
-						else:
-							print 'ETX', 
+						# if i >= len3bytes:
+						# 	print 'truncated',
+						# else:
+						# 	print 'ETX', 
 						ended = True
 						started = False
 						i = 0
@@ -65,15 +61,15 @@ def main():
 						for c in commands:
 							scores[score(pdu,commands[c] + ETX)] = c
 						print scores
-						print 'probably', scores[max(scores)]
+						print scores[max(scores)], '                                       '
 						scores = {}
 						pdu = ''
 					elif started and not ended:
 						i += len(bit)
 						pdu += bit
 					elif not started and STX in cmd:
-						print ''
-						print 'STX'
+						# print ''
+						# print 'STX'
 						started = True
 						ended = False
 						i = 0
@@ -81,7 +77,6 @@ def main():
 				sys.stdout.flush()
 
 	except KeyboardInterrupt:
-			print 'catched outside'
 			stop = True
 		# except Exception as e:
 		# 	print e

@@ -46,8 +46,8 @@ def main():
 				stdscr.addstr(i,0,key)
 		except:
 			stdscr.addstr(i,0,'stop  ')
-			# tx.arduino.write(bytearray(['1']))
-			tx.arduino.write(bytearray('0'))
+			# tx.arduino.write(bytearray(['1'])) # no need unless I set it to flicker, ETX finishes with 1
+			# tx.arduino.write(bytearray('0')) # for dark base case
 	curses.nocbreak(); stdscr.keypad(0); curses.echo()
 	curses.endwin()
 	tx.stop()
