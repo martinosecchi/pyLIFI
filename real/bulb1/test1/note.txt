@@ -1,0 +1,17 @@
+the test is to send ON signals at intervals of 1 s each, starting from bulb OFF
+each signal lasts a bit less than the previous (in ms):
+
+1)  2000
+2)  1000
+3)  500
+4)  200
+5)  100
+6)  50
+7)  30
+8)  20
+9)  10
+10) 5
+11) 2
+
+11 in total
+after 6) they don't reach macimum brightness anymore, and 10 - 11 are not even visible
