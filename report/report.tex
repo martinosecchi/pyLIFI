@@ -1,0 +1,63 @@
+\documentclass{article}
+
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{xargs}                      % Use more than one optional parameter in a new commands
+\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\usepackage{float}
+\usepackage{mathptmx}% http://ctan.org/pkg/mathptmx
+\usepackage{listings}
+% \usepackage[document]{ragged2e} % auto text align left
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+\title{\textbf{Msc. Thesis} \\
+Applied Visible Light Communication for Robotics}
+\author{
+   Martino Secchi\\
+    {msec@itu.dk}\\
+    \\
+    Supervisor:\\
+    Kasper St\o y
+}
+\date{June 2017}
+
+\begin{document}
+
+\pagenumbering{gobble}
+\maketitle
+\clearpage
+
+\listoftodos
+\clearpage
+
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+\abstract{\input{chapters/abstract.tex}}
+
+\section{Introduction}
+\input{chapters/intro.tex}
+\todo{talk about situated communication}
+
+\section{Visible Light Communication}
+\input{chapters/vlc.tex}
+
+\section{System Overview}
+\input{chapters/system.tex}
+
+\input{chapters/chars.tex}
+
+\section{Evaluation and Results}
+\input{chapters/results.tex}
+
+\section{Discussion}
+\input{chapters/discussion.tex}
+
+\section{Conclusion}
+\input{chapters/conclusion.tex}
+\clearpage
+\bibliographystyle{plain}
+\bibliography{report}
+\end{document}

@@ -1,0 +1,119 @@
+\section{Control layer}
+[This layer serves as a link between the logical and physical layer.\\
+In practice it takes logical input and tries to control hardware to produce physical variations in response.\\
+Switching speed allowed by the control layer: boards but not only, relays and transistors too.\\
+Speed of reception also depending on the board.\\
+Frequency of encoding as a result.\\
+Also speed of communication from a controller to a terminal like in the prototype (serial)?]
+
+%layer overview
+This layer is responsible of connecting the physical and the logical layers of the system, in a structured way.
+For a transmitter this translates to the process of receiving a logical message, and control the physical components of the system accordingly.
+For the receiver the control layer is responsible of reading the values from the sensory layer and forward them to the logical layer, perform filtering and other minor operations.
+In the prototyped system, this layer is physically represented by micro controller boards connected with a terminal through a serial connection on one side, and with the components of the physical layer on the other.
+\todo{small graph serial -> control -> physical}
+This layer is crucial for establishing performance of the system in terms of \textbf{rates}, as in how many values can be read from a sensor per time unit for reception, and how fast can a control signal be sent to control the light emitter for transmission.
+
+%serial connection
+\subsection{Serial connection to a terminal}
+\todo{find a place for this} 
+One aspect to consider in implementing this passage is that the serial buffer has a limited size of 64 bytes in most Arduino boards, so it's important to keep the serial communication as light as possible to avoid overflow. In most cases, it's possible to encode a char into one single 8-bits byte, but not all the programming languages implement this automatically.
+The system described in this paper was implemented using Python 2.7, which uses dynamic types and therefore doesn't have a specific type for \textit{chars}. In Python, strings have an overhead of 37 bytes, plus one byte for every character in the string, this would result in a very heavy serial transmission for just a few characters. Characters need to be converted in single bytes before sending them. 
+
+\todo{information about clock rates of the boards}
+
+%reception
+\subsection{Reception rates}
+\label{recrates}
+Reception happens as fast as the micro controller allows, meaning that the control process doesn't force a specific speed on the analog input coming from the sensor, but rather the rate of reception is bound to the clock rate of the processor in the control layer and the speed of the physical sensor.
+The average reception rate is of about one value every 0.833 ms, about 1200 Hz (or bits per second).
+This value naturally becomes the upper bound for the transmission rate, since if signals were sent faster, they wouldn't be received in time. 
+The control layer also performs the two operations of appending a timestamp to each value once received before sending it to the next process, and filtering each value as an average of its direct predecessor and itself.
+With the use of timestamps it's fairly simple to measure the reception rate before the serial connection.
+This rate is not constant, but has a standard deviation of about 0,0184 ms.
+\todo{rate of serial connection arduino to computer?}
+
+
+
+%transmission
+\subsection{Transmission rates}
+[maximum rates possible for the control layer, and rates adjusted to physical layer limitations and reception limitations]\\
+Transmission takes as input a message that needs to be converted into Manchester code (see \ref{modulschemes}).
+Just like pure binary, Manchester encoding only has two symbols, 1s and 0s.
+A symbol, in telecommunication, represents the smallest amount of data that can be sent in form of an analog signal. The symbol rate (symbols per time unit) is measured in baud.
+Each pair of symbols in Manchester represent a single binary bit. 
+Given the limitations for the reception side, it's in practice very difficult to measure transmission rates above 1000 Hz in the prototype system.
+From the measurements of warmup times of the LED presented in section \ref{physical}, it's possible to see that in 1 ms the LED can produce an increase of at most 15\% of brightness  in the best case. \todo{how much decrease in 1 ms?}
+The control layer is directly responsible for the transmission rate, therefore it needs to guarantee a rate that allows a reliable reception.
+These previous limitations would suggest that a maximum acceptable rate is of 1000 Hz, with a potential difference between an average 1 and an average 0 of at most 15\% of brightness, and a reception rate that is slightly higher.
+Would this rate produce acceptable readings on the receiver side?\\
+Experimentally it was found that sending signals at 1ms intervals produces a degree of uncertainty of about 30\%, while a 2 ms interval performs much better at 0\%.
+More on the experiments and results in section \ref{tr:rate:exp}.
+According to these results, each single symbol is forced to last for 2 ms before the transmitter board can send the next.
+The transmission rate would therefore be at best of 500 bauds in theory, in the case where the activity of the micro controller pays no role.
+This value was experimentally measured to be slightly smaller, at around 450 bauds. 
+
+%experimentations for tx rate
+\subsection{Experiments and Results for Transmission rate}
+\label{tr:rate:exp}
+\todo{rewrite to include discussion of 3 and 4 too}
+[Experimental setup, experiments, performance and the the results I achieved in the prototype. also talk about limitations for the solid state relay and light bulb]\\
+To find the perfect transmission rate experimentally, the prototype has been set up to transmit a sequence of alternating 1s and 0s of known length multiple times.
+For this experiment, the distance and angle from the sensor to the light source have been minimised to obtain the best reception possible.
+The experiment aims to measure the number of local maximums and local minimums in the transmission, that would clearly define the number of 0 and 1 signals received.
+Also, the brightness levels have been measured for such local peaks.\\
+The fist transmission rate to be tested is a 1000 bps rate, with an interval of 1 ms between subsequent signals.
+Over 30\% of the signals haven't been received.\\
+A second rate of about 500 bps has also been tested to compare with the first one.
+This time the interval between two subsequent signals is of 2 ms.
+Table \ref{ratestable} shows the results of various measurements with the two rates, while fig. \ref{fig:txpeak} shows overlapped samples of the transmissions with the two different setups.\\
+As can be seen in the figure, during transmission the brightness achieved from the LED used for testing is not at 100\%, but transmission is still clearly recognised at a level of about 60\%. 
+In the figure, the starting and ending points of the transmission are at the minimum and maximum brightness level of the LED, to the far left and far right respectively.\\
+The transmission is always the same over all the instances and in both setups.
+Reception with the first setup is almost double as fast as the one in the second setup, which is consistent with the rate difference.
+Another difference that is clearly noticeable is that the difference between 1s and 0s also doubles, making the second setup more reliable in case of ambient light interference. \todo{prove that there is more reliability with ambient interference}
+These results suggest that the lower the rate, the more reliable the communication.
+However, the rate of 2 ms per signal has been chosen to be final transmission rate in the prototype system with the low power LED, being the fastest reliable rate.
+With a system that uses a different light emitter, or designed to be used at longer distances, different experiments would be advised.
+\begin{figure}[hbt]
+\centering
+  \includegraphics[height=140px]{img/overlap1}
+  \includegraphics[height=140px]{img/overlap2}
+  \includegraphics[height=140px]{img/overlap3}
+  \includegraphics[height=140px]{img/overlap4}
+  \caption{Test of rate with 1 ms, 2 ms, 3 ms and 4 ms intervals (left to right, top to bottom).}
+  \label{fig:txpeak}
+\end{figure}
+
+\begin{table}[hbt]
+\centering
+ \begin{tabular}{l c c c r}
+   rate interval & missing 1s & missing 0s & average 1 brightness & average 0 brightness \\
+   \hline
+   1 ms & 34.52\% & 30.62\% & 66.75\% +- 6.10 & 55.78\% +- 6.72 \\
+   2 ms & 0.00\% & 0.00\% & 70.22\% +- 7.06 & 50.18\% +- 5.79 \\
+   3 ms & 0.00\% & 0.00\% & 76.72\% +- 6.18 & 43.03\% +- 5.20 \\
+   4 ms & 0.00\% & 0.00\% & 82.77\% +- 4.00 & 35.54\% +- 3.60 \\
+   \hline
+	\end{tabular}
+  \caption{Rates results compared.}
+  \label{ratestable}
+\end{table}
+
+\begin{figure}
+\centering
+\includegraphics[height=100px]{img/hist0}
+\includegraphics[height=100px]{img/hist1}
+\caption{Distributions of brightness levels during transmission (2 ms interval), brightness of binary 0s to the left, 1s to the right. }
+\label{fig:histopeaks}
+\end{figure}
+
+\todo{solid state relay limitations}
+
+%interference
+\subsection{Ambient light interference}
+\todo{produce statistics for different ambient light interferences}
+All previous tests, and most of the next, have been performed in an otherwise dark environment if not for the LED that was being tested.
+But how would a  VLC system respond to light interference?
+There is not an easy answer to this question, since interference has not a precise definition.
+There are different levels of interference
