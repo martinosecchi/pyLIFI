@@ -23,8 +23,9 @@ class LiFiClassifierLight(object):
 		self._doubletime = 340 #390 #~400
 		self._singletime = 170 #180 #~200
 		self.verbose = False
+		self._limit = 4 # limit for long sequences of the same bit
 
-	def feed(self, time, value): # give me a value!
+	def feed(self, time, value): # give me a value! I might have a prediction for you
 		pred = None
 		if self.prev is None:
 			self.prev = value
@@ -62,6 +63,9 @@ class LiFiClassifierLight(object):
 			pred = '1'*int(delta/self._singletime) if m else '0'*int(delta/self._singletime) # long strikes
 		else:
 			pred = '1' if m else '0'
+
+		if len(pred) > self._limit:
+			pred = pred[0] * self._limit
 
 		if self.verbose:
 			self._printpred(m,e,delta,pred)

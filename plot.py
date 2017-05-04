@@ -86,7 +86,7 @@ def plots(folder, samplefile, processedfile, interval, yrange, splitint):
 
 		p = subprocess.Popen(['gnuplot', '-'], stdin=subprocess.PIPE)
 		cmds = []
-		cmds.append("set term png")
+		cmds.append("set term pngcairo")
 		cmds.append("set out \"" + os.path.join(folder,samplefile) + str(i) + ".png\" " )
 		cmds.append("set xlabel \"time\" " )
 		cmds.append("set ylabel \"brightness\"")
@@ -119,7 +119,7 @@ def plotz(folder, samplefile, interval, yrange, splitint):
 
 		p = subprocess.Popen(['gnuplot', '-'], stdin=subprocess.PIPE)
 		cmds = []
-		cmds.append("set term png")
+		cmds.append("set term pngcairo")
 		cmds.append("set out \"" + os.path.join(folder,samplefile) + str(i) + ".png\" " )
 		cmds.append("set xlabel \"time\" " )
 		cmds.append("set ylabel \"brightness\"")
@@ -142,7 +142,7 @@ def plotn(folder, samplefile, interval, yrange):
 	# plot normal
 	p = subprocess.Popen(['gnuplot', '-'], stdin=subprocess.PIPE)
 	cmds = []
-	cmds.append("set term png")
+	cmds.append("set term pngcairo")
 	cmds.append("set out \"" + os.path.join(folder,samplefile) + ".png\" " )
 	cmds.append("set xlabel \"time\" " )
 	cmds.append("set ylabel \"brightness\"")
@@ -161,7 +161,7 @@ def plotp(folder, samplefile, processedfile, label, interval, yrange):
 	# plot for processed, comparison
 	p = subprocess.Popen(['gnuplot', '-'], stdin=subprocess.PIPE)
 	cmds = []
-	cmds.append("set term png")
+	cmds.append("set term pngcairo")
 	cmds.append("set out \"" + os.path.join(folder,processedfile) + str(label) + ".png\" " )
 	cmds.append("set xlabel \"time\" " )
 	cmds.append("set ylabel \"brightness\"")

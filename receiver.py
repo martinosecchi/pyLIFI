@@ -22,25 +22,27 @@ def main():
 
 	args = {'epsilon':2}
 	classifier = LiFiClassifierLight(args)
-	buff16 = deque(['0']*16, 16)
+	buff16 = deque(['0']*16, 16) # a buffer of length 16 in manchester encoding (min 1 byte), contains predicted bits (1, 0, but also 11111 00000 and so on they could be longer than 1!)
 	maxlen = 16
 	len3bytes = 3 * 8 * 2 # =48 for manchester coding
 	mismatches_prob = 6 # how many bits could I have skipped out of 3 bytes? arbitrary for now
 	started = False
-	ended = False
+	ended = True
 	pdu = ''
 	i = 0
 	bit = None
 	stop = False
+	takinglength = False
+	lengthbuff = ''
+	length = -1
 	print 'starting..'
 	try:
 		while not stop:
-			line = rx.readline() #rx.getbuffered()
+			line = rx.readline()
 			if line:
 				try: 
 					time, value = line.split(" ")
 					sys.stdout.write("%10s %10s " % (time, value.rstrip('\n')))
-					# sys.stdout.flush()
 					bit = classifier.feed(float(time), float(value))
 				except ValueError:
 					bit = None
@@ -48,30 +50,46 @@ def main():
 				if bit: # a prediction of 1 or more bits
 					buff16.append(bit)
 					cmd = reduce(lambda x,y: x+y, buff16)
-					# sys.stdout.write(" %100s "% cmd)
-					if started and not ended and (i >= len3bytes or (ETX in cmd and i >= len3bytes - mismatches_prob)):
-						# if i >= len3bytes:
-						# 	print 'truncated',
-						# else:
-						# 	print 'ETX', 
+					if takinglength:
+						for b in bit:
+							lengthbuff += b
+							if len(lengthbuff) == 16:
+								try:
+									length = 2* 8* int(manch_to_bin(lengthbuff),2)
+									print 'LEN', length, '                  '
+								except:
+									print 'didn\'t get length', manch_to_bin(lengthbuff)
+									started = False
+								takinglength = False
+							elif length != -1:
+								i += 1
+								pdu += b
+					elif started and not ended and i > length - mismatches_prob and ETX in cmd:
+						print 'ETX                                             ' 
 						ended = True
 						started = False
-						i = 0
-						print 'pdu found:', pdu, manch_to_bin(pdu)
-						for c in commands:
-							scores[score(pdu,commands[c] + ETX)] = c
-						print scores
-						print scores[max(scores)], '                                       '
-						scores = {}
+						print 'pdu found:', pdu
+						print reconstruct(pdu)
+						# # compare with known commands
+						# for c in commands:
+						# 	scores[score(pdu,commands[c] + ETX)] = c
+						# print scores
+						# print scores[max(scores)] #, '                                       '
+						# scores = {}
+						# # purge buff16:
+						# for i in range(16):
+						# 	buff16.append('0')
 						pdu = ''
 					elif started and not ended:
 						i += len(bit)
 						pdu += bit
 					elif not started and STX in cmd:
-						# print ''
-						# print 'STX'
+						print 'STX                                               '
 						started = True
 						ended = False
+						takinglength = True
+						lengthbuff = ''
+						length = -1
 						i = 0
 				sys.stdout.write("\r")
 				sys.stdout.flush()
@@ -85,11 +103,6 @@ def main():
 	
 	if not rx.stopped:
 		rx.stop()
-# go trhough rx.queue and check for stx
-# if stx hits, go through the next 3 bytes (3 * 2 * 8 pred values), or until you get etx
-# so scan etx as well in the meantime
-# then reconstruct
-# now, scanning for stx will produce delays, I should try to keep it as fast as I can
 
 def score(a, b):
 	a = Sequence(list(a))
@@ -115,6 +128,24 @@ def manch_to_bin(manch):
 		else:
 			binary += '-'
 	return binary
+
+def reconstruct(pdu):
+	# pdu is a string of bits in manchester encoding
+	# take 16 bits at a time to reconstruct 1 byte into char, until there are no more enough
+	i = 0
+	bytlen = 16
+	res = ''
+	while i + bytlen < len(pdu):
+		p = manch_to_bin(pdu[i:i+bytlen])
+		print pdu[i:i+bytlen], '->', p, '->',
+		try: 
+			r = chr(int(p, 2))
+		except:
+			r = '-'
+		print r
+		res += r
+		i += bytlen
+	return res
 
 
 if __name__ == '__main__':

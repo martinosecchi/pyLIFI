@@ -37,12 +37,17 @@ class lifiTx(threading.Thread):
 	def send(self, msg):
 		self.queue.put(msg)
 
-
 	def enlight(self, msg):
 		self.arduino.write(STX)
+		self.arduino.write(bytearray([len(msg)])) # send also length
 		for b in msg:
 			self.arduino.write(bytearray(b)) #send 1 byte at a time, as chars
 		self.arduino.write(ETX)
+
+		# allow ETX to get predicted by switching state one more time:
+		self.arduino.write(bytearray('0'))
+		self.arduino.write(bytearray('0')) # for good measure
+		self.arduino.write(bytearray('1'))
 	def check(self):
 		return self.arduino.readline()
 
@@ -53,7 +58,6 @@ class lifiTx(threading.Thread):
 			except Queue.Empty:
 				pass
 			else:
-				# msg = self.encoded(msg)
 				self.enlight(msg)
 
 def main():
@@ -75,6 +79,13 @@ def main():
 		elif cmd == '0':
 			tx.arduino.write(bytearray('0'))
 		elif cmd == '1':
+			tx.arduino.write(bytearray('1'))
+		elif cmd == '*':
+			tx.arduino.write(bytearray('*'))
+		elif cmd == '#':
+			tx.arduino.write(bytearray([0]))
+			tx.arduino.write(bytearray([0]))
+			tx.arduino.write(bytearray([0]))
 			tx.arduino.write(bytearray('1'))
 		else:
 			tx.send(cmd)
