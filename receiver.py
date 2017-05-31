@@ -23,7 +23,7 @@ def main():
 	args = {'epsilon':2}
 	classifier = LiFiClassifierLight(args)
 	buff16 = deque(['0']*16, 16) # a buffer of length 16 in manchester encoding (min 1 byte), contains predicted bits (1, 0, but also 11111 00000 and so on they could be longer than 1!)
-	maxlen = 16
+	maxlen = 10 * 8 * 2 # 10 chars max
 	len3bytes = 3 * 8 * 2 # =48 for manchester coding
 	mismatches_prob = 6 # how many bits could I have skipped out of 3 bytes? arbitrary for now
 	started = False
@@ -41,9 +41,16 @@ def main():
 			line = rx.readline()
 			if line:
 				try: 
-					time, value = line.split(" ")
+					# time, value = line.split(" ")
+					time, value, left, right = line.split(" ")
 					sys.stdout.write("%10s %10s " % (time, value.rstrip('\n')))
 					bit = classifier.feed(float(time), float(value))
+					# if (float(left) > float(value) and float(left) > float(right)):
+					# 	print 'left'
+					# elif float(right) > float(value) and float(right) > float(left):
+					# 	print 'right'
+					# else:
+					# 	print 'center'
 				except ValueError:
 					bit = None
 
@@ -56,6 +63,8 @@ def main():
 							if len(lengthbuff) == 16:
 								try:
 									length = 2* 8* int(manch_to_bin(lengthbuff),2)
+									if length > maxlen:
+										length = maxlen
 									print 'LEN', length, '                  '
 								except:
 									print 'didn\'t get length', manch_to_bin(lengthbuff)
@@ -93,6 +102,7 @@ def main():
 						i = 0
 				sys.stdout.write("\r")
 				sys.stdout.flush()
+
 
 	except KeyboardInterrupt:
 			stop = True

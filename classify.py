@@ -20,8 +20,8 @@ class LiFiClassifierLight(object):
 		self.direction = True
 		# s, m, e form a peak, either up or down
 		self.s = None #'start direction'
-		self._doubletime = 340 #390 #~400
-		self._singletime = 170 #180 #~200
+		self._doubletime = 330*2 #340*2#390 #~400
+		self._singletime = 175*2 #170 #~200
 		self.verbose = False
 		self._limit = 4 # limit for long sequences of the same bit
 

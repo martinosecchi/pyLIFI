@@ -1,0 +1,6 @@
+183 1s and 183 0s found in 8 files
+should be 192 for ones and 192 for 0s
+error for 1s : 4.687500 perc.
+error for 0s : 4.687500 perc.
+avg 1: 49.997016 std dev: 12.220294
+avg 0: 36.419259 std dev: 12.010403

@@ -166,7 +166,7 @@ def plotn(files, interval="-10:285", yrange="-10:110"):
 	cmds = []
 	cmds.append("set term pngcairo")
 	cmds.append("set out \"overlap4.png\" " )
-	cmds.append("set title \"Alternating signals, rate with 2ms interval\"")
+	cmds.append("set title \"Alternating signals, rate with 4ms interval\"")
 	cmds.append("set xlabel \"time [ms]\" " )
 	cmds.append("set ylabel \"brightness [%]\"")
 	if interval:

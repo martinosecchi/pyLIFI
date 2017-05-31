@@ -121,8 +121,10 @@ def scale():
 
 
 def analyse():
-	predicate1 = re.compile(r'xup(.*).txt')
-	predicate2 = re.compile(r'xdown(.*).txt')
+	# predicate1 = re.compile(r'xup(.*).txt')
+	# predicate2 = re.compile(r'xdown(.*).txt')
+	predicate1 = re.compile(r'xup1.txt')
+	predicate2 = re.compile(r'xdown1.txt')
 
 	N = 11
 	M = 11
@@ -148,10 +150,11 @@ def analyse():
 					y = np.array(values)
 					p = np.poly1d(np.polyfit(x, y, 9))
 
-					# xp = np.linspace(-10, 80, 100)
-					# _ = plt.plot(x, y, '.', xp, p(xp), '-')#, xp, p3(xp), '--')
-					# plt.ylim(-10,110)
-					# plt.show()
+					# show graph
+					xp = np.linspace(-10, 80, 100)
+					_ = plt.plot(x, y, '.', xp, p(xp), '-')#, xp, p3(xp), '--')
+					plt.ylim(-10,110)
+					plt.show()
 
 					if predicate1.match(fn): # warmup
 						print 'up', count1

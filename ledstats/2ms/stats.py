@@ -51,9 +51,9 @@ def main():
 
 	plotn(files[:5])
 	print '%d 1s and %d 0s found in %d files' % (len(locmax), len(locmin), n_samples)
-	print 'should be %d for ones and %d for 0s' % ((n_samples*24), (n_samples*24)-8)
+	print 'should be %d for ones and %d for 0s' % ((n_samples*24), (n_samples*24)-n_samples)
 	print 'error for 1s : %f perc.' %  (100 -(len(locmax)/(n_samples*24.0)*100))
-	print 'error for 0s : %f perc.' %  (100 -(len(locmin)/(n_samples*24.0-8)*100))
+	print 'error for 0s : %f perc.' %  (100 -(len(locmin)/(n_samples*24.0-n_samples)*100))
 	avg = get_avg(locmax)
 	print 'avg 1: %f std dev: %f' % (avg, get_std_dev(get_variance(locmax, avg)))
 	avg = get_avg(locmin)

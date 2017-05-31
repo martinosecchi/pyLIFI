@@ -1,0 +1,48 @@
+
+ambient light
+dist 0
+len = 5
+√ 	50	
+x	0
+
+ambient light
+dist 0
+len = 10
+√	50
+x	0
+
+ambient light
+dist 0
+len = 20
+√	50
+x	0
+
+ambient light 
+dist 0
+len = 30
+√ 	50
+x 	0
+
+ambient light
+dist 10
+len = 5
+√ 	46
+x 	4
+
+ambient light
+dist 10
+len = 10
+√	48
+x	2
+
+ambient light 
+dist 10
+len = 20
+√	44
+x 	6
+
+ambient light 
+dist 10
+len = 30
+√ 	34	
+x	16

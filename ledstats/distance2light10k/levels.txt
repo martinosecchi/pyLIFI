@@ -1,0 +1,7 @@
+max xsample0.txt 100.000000
+max xsample10.txt 64.567032
+max xsample20.txt 41.274903
+max xsample30.txt 24.792936
+max xsample40.txt 18.037161
+max xsample50.txt 12.971693
+max xsamplez100.txt 5.681681

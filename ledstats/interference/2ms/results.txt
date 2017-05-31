@@ -1,0 +1,26 @@
+120 1s and 118 0s found in 5 files
+should be 120 for ones and 112 for 0s
+error for 1s : 0.000000 perc.
+error for 0s : -5.357143 perc.
+avg 1: 71.015114 std dev: 6.321080
+avg 0: 48.970315 std dev: 5.463843
+---------- 1
+avg peak: 71.0151139058
+max peak: 77.6964179695
+min peak: 44.774556639
+variance: 39.9560463473
+stddev: 6.32107952389
+ 77.5 /100 elements between
+ avg + stddev: 77.3361934297   avg - stddev: 64.6940343819
+ 95.0 /100 elements between
+ avg + 2stddev: 83.6572729536   avg - 2stddev: 58.372954858
+--------- 0
+avg peak: 48.9703152653
+max peak: 58.8569165787
+min peak: 33.3838650145
+variance: 29.8535751914
+stddev: 5.46384252988
+ 66.9491525424 /100 elements between
+ avg + stddev: 54.4341577952   avg - stddev: 43.5064727354
+ 97.4576271186 /100 elements between
+ avg + 2stddev: 59.898000325   avg - 2stddev: 38.0426302055

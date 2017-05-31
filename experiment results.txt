@@ -1,0 +1,14 @@
+
+0-10 cm range
+dark
+facing light
+√ 25
+x 25
+
+10-20 cm rnge
+√ 10
+x 40
+
+20-30
+5
+45

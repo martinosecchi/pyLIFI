@@ -1,0 +1,14 @@
+dark1.txt 0 0
+dark2.txt 24 25
+dark3.txt 48 49
+dark4.txt 72 73
+dark5.txt 96 97
+dark6.txt 120 122
+dark7.txt 144 147
+dark8.txt 168 172
+192 1s and 197 0s found in 8 files
+should be 192 for ones and 192 for 0s
+error for 1s : 0.000000 perc.
+error for 0s : -2.604167 perc.
+avg 1: 60.305571 std dev: 10.642066
+avg 0: 43.612114 std dev: 10.678656

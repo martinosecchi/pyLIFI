@@ -41,7 +41,7 @@ class lifiTx(threading.Thread):
 		self.arduino.write(STX)
 		self.arduino.write(bytearray([len(msg)])) # send also length
 		for b in msg:
-			self.arduino.write(bytearray(b)) #send 1 byte at a time, as chars
+			self.arduino.write(bytearray(b)) #send 1 char at a time, as bytes
 		self.arduino.write(ETX)
 
 		# allow ETX to get predicted by switching state one more time:
@@ -83,15 +83,58 @@ def main():
 		elif cmd == '*':
 			tx.arduino.write(bytearray('*'))
 		elif cmd == '#':
-			tx.arduino.write(bytearray([0]))
-			tx.arduino.write(bytearray([0]))
-			tx.arduino.write(bytearray([0]))
-			tx.arduino.write(bytearray('1'))
+			for i in range(8):
+				tx.arduino.write(bytearray([0]))
+				tx.arduino.write(bytearray([0]))
+				tx.arduino.write(bytearray([0]))
+				tx.arduino.write(bytearray('1'))
+				time.sleep(0.5)
+				tx.arduino.write(bytearray('0'))
+				time.sleep(0.5)
+		elif cmd == '-':
+			for i in range(8):
+				tx.arduino.write(bytearray('1'))
+				time.sleep(0.2)
+				tx.arduino.write(bytearray('0'))
+				time.sleep(0.2)
 		else:
 			tx.send(cmd)
 
 	tx.stop()
 
+kbdInput = ''
+finished = True
+def main2():
+	lastCmd = ''
+	global kbdInput
+	global finished
+	tx = lifiTx()
+	tx.start()
+
+	def kbdListener():
+		global kbdInput, finished
+		kbdInput = raw_input()
+		# print "maybe updating...the kbdInput variable is: {}".format(kbdInput)
+		finished = True
+	print "> ",
+	while True:
+		# print "kbdInput: {}".format(kbdInput)
+		# print "lastCmd: {}".format(lastCmd)
+		if lastCmd != kbdInput:
+			print "Received new command", kbdInput
+			lastCmd = kbdInput
+			if lastCmd == 'stop':
+				break
+		if finished:
+			finished = False
+			listener = threading.Thread(target=kbdListener)
+			listener.start()
+		if lastCmd:
+			print lastCmd
+			tx.send(lastCmd)
+		time.sleep(1)
+	tx.stop()
+
 if __name__ == '__main__':
-	main()
+	main2()
 		 
